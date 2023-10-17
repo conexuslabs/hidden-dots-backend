@@ -15,6 +15,8 @@ export class ConfigService {
 		const schema = Joi.object({
 			MONGODB_URI: Joi.string().required(),
 			PORT: Joi.number().default(8081),
+			SERVER_EMAIL: Joi.string().required(),
+			SERVER_PASSWORD: Joi.string().required(),
 		})
 		const { error, value } = schema.validate(config, {
 			abortEarly: false,
@@ -37,5 +39,12 @@ export class ConfigService {
 
 	get jwtSecret(): string {
 		return this.config.SECRET
+	}
+
+	get serverEmail(): string {
+		return this.config.SERVER_EMAIL
+	}
+	get serverPassword(): string {
+		return this.config.SERVER_PASSWORD
 	}
 }

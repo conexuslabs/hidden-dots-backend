@@ -1,8 +1,7 @@
-import { Injectable } from "@nestjs/common"
-import { InjectModel } from "@nestjs/mongoose"
-import { Model } from "mongoose"
-import { SignupDto } from "src/auth/dto/signup.dto"
-import { User, UserDocument } from "src/schemas/user.schema"
+import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+import { User, UserDocument } from 'src/schemas/user.schema'
 
 @Injectable()
 export class UsersService {
@@ -16,9 +15,8 @@ export class UsersService {
 		return this.userModel.findOne(filters).lean().exec()
 	}
 
-	async create(user: SignupDto) {
+	async create(user: User) {
 		const createdUser = await new this.userModel(user).save()
 		return createdUser.toObject()
 	}
-
 }

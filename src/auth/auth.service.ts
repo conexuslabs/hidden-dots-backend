@@ -1,50 +1,51 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { UsersService } from 'src/users/users.service'
-import { SignupDto } from './dto/signup.dto'
+import { SignupViaEmailDto } from './dto/signup.dto'
 import * as bcrypt from 'bcrypt'
 import { UserDocument } from 'src/schemas/user.schema'
 import { JwtService } from '@nestjs/jwt'
-// const nodemailer = require('nodemailer')
-// const sgMail = require('@sendgrid/mail')
-// import { EmailService } from "../emailer/emailer"
+import { AUTH_ERRORS } from './errors'
+import * as nodemailer from 'nodemailer'
+import { ConfigService } from 'src/config/config.service'
+import { warn } from 'console'
 
 @Injectable()
 export class AuthService {
-	constructor(private readonly usersService: UsersService, private readonly jwtService: JwtService) {}
+	private transporter
 	private static HASH_ROUNDS = 10
 
-	async signup(user: SignupDto) {
-		const existingUser = await this.usersService.findOne({ email: user.email })
-		if (existingUser) throw new BadRequestException('User with email already exists')
+	constructor(
+		private readonly usersService: UsersService,
+		private readonly jwtService: JwtService,
+		private readonly configService: ConfigService,
+	) {
+		this.transporter = nodemailer.createTransport({
+			host: 'smtp.gmail.com',
+			port: 465,
+			secure: true,
+			auth: {
+				user: this.configService.serverEmail,
+				pass: this.configService.serverPassword,
+			},
+		})
+	}
 
-		const password = ''
+	async signup(credentials: SignupViaEmailDto) {
+		const { email, password } = credentials
+		const existingUser = await this.usersService.findOne({ email })
+		if (existingUser) throw new BadRequestException(AUTH_ERRORS.USER_EMAIL_ALREADY_EXIST)
 
 		const hashedPassword = await bcrypt.hash(password, AuthService.HASH_ROUNDS)
-		const createdUser = await this.usersService.create({
-			...user,
+		const verificationCode = this.generateVerificationCode()
+
+		await this.usersService.create({
+			email,
 			password: hashedPassword,
+			isVerified: false,
+			verificationCode,
 		})
 
-		// const transporter = nodemailer.createTransport({
-		// 	service: 'gmail',
-		// 	auth: {
-		// 		user: 'hacker.sanan4@gmail.com',
-		// 		pass: 'nkixauhximetftdy',
-		// 	},
-		// })
-
-		// const mailOptions = {
-		// 	from: 'hacker.sanan4@gmail.com',
-		// 	to: user.email,
-		// 	subject: 'Signup Successful!',
-		// 	text: `Here is your password. ${password}`,
-		// }
-		// transporter.sendMail(mailOptions, (error: any, info: any) => {
-		// 	if (error) console.log('Error occurred:', error)
-		// 	else console.log('Email sent:', info.response)
-		// })
-
-		return createdUser
+		return await this.sendVerificationCode(email, verificationCode)
 	}
 
 	async validateUser({ email, password }: { email: string; password: string }) {
@@ -62,5 +63,32 @@ export class AuthService {
 		return {
 			token: this.jwtService.sign(payload),
 		}
+	}
+
+	async sendVerificationCode(email: string, verificationCode: string) {
+		const mailOptions = {
+			from: this.configService.serverPassword,
+			to: email,
+			subject: 'Verification Code',
+			text: `Your verification code is: ${verificationCode}`,
+		}
+
+		this.transporter.sendMail(mailOptions, error => {
+			if (error) {
+				console.log('error', error)
+				return new BadRequestException('Failed to send email.')
+			} else {
+				return {
+					successMessage: `Verification code has been successfully sent to you email`,
+				}
+			}
+		})
+	}
+
+	private generateVerificationCode() {
+		const min = 100000 // Minimum 6-digit number
+		const max = 999999 // Maximum 6-digit number
+		const verificationCode = Math.floor(Math.random() * (max - min + 1)) + min
+		return verificationCode.toString()
 	}
 }
