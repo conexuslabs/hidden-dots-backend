@@ -18,7 +18,7 @@ async function bootstrap() {
 	const swaggerConfig = new DocumentBuilder()
 		.setTitle('Hidden Dots Backend')
 		.setDescription('Loan Management Application')
-		.setVersion('1.0')
+		.setVersion('6.0')
 		.addBearerAuth()
 		.build()
 
