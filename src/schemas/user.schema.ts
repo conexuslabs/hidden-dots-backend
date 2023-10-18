@@ -3,6 +3,8 @@ import { Document } from "mongoose"
 
 @Schema({ timestamps: true, versionKey: false })
 export class User {
+	_id?: string
+
 	@Prop()
 	email: string
 

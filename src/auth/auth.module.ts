@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common"
+import { forwardRef, Module } from "@nestjs/common"
 import { AuthService } from "./auth.service"
 import { AuthController } from "./auth.controller"
 import { UsersModule } from "src/users/users.module"
@@ -12,8 +12,9 @@ import { User, UserSchema } from "src/schemas/user.schema"
 
 @Module({
 	imports: [
-		UsersModule,
+		forwardRef(() => UsersModule),
 		PassportModule,
+		MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 		JwtModule.registerAsync({
 			inject: [ConfigService],
 			useFactory: async (configService: ConfigService) => ({
@@ -21,9 +22,9 @@ import { User, UserSchema } from "src/schemas/user.schema"
 				// signOptions: { expiresIn: '10 days' },
 			}),
 		}),
-		MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
 	],
 	controllers: [AuthController],
 	providers: [AuthService, LocalStrategy, JwtStrategy],
+	exports: [AuthService],
 })
 export class AuthModule {}
