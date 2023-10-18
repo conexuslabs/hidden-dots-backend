@@ -1,15 +1,15 @@
-import { Model } from 'mongoose'
-import * as bcrypt from 'bcrypt'
-import * as nodemailer from 'nodemailer'
-import { BadRequestException, Injectable } from '@nestjs/common'
-import { UsersService } from 'src/users/users.service'
-import { SignupViaEmailDto, VerifyEmailDto } from './dto/signup.dto'
-import { User, UserDocument } from 'src/schemas/user.schema'
-import { JwtService } from '@nestjs/jwt'
-import { AUTH_ERRORS } from './errors'
-import { ConfigService } from 'src/config/config.service'
-import { InjectModel } from '@nestjs/mongoose'
-import { SUCCESS_MESSAGES } from 'src/common/successMessages'
+import { Model } from "mongoose"
+import * as bcrypt from "bcrypt"
+import * as nodemailer from "nodemailer"
+import { BadRequestException, Injectable } from "@nestjs/common"
+import { UsersService } from "src/users/users.service"
+import { SignupViaEmailDto, VerifyEmailDto } from "./dto/signup.dto"
+import { User, UserDocument } from "src/schemas/user.schema"
+import { JwtService } from "@nestjs/jwt"
+import { AUTH_ERRORS } from "./errors"
+import { ConfigService } from "src/config/config.service"
+import { InjectModel } from "@nestjs/mongoose"
+import { SUCCESS_MESSAGES } from "src/common/successMessages"
 
 @Injectable()
 export class AuthService {
@@ -29,7 +29,7 @@ export class AuthService {
 		@InjectModel(User.name) private readonly userModel: Model<UserDocument>,
 	) {
 		this.transporter = nodemailer.createTransport({
-			host: 'smtp.titan.email',
+			host: "smtp.titan.email",
 			port: 465,
 			secure: true,
 			auth: {
@@ -85,14 +85,14 @@ export class AuthService {
 		const mailOptions = {
 			from: this.configService.serverEmail,
 			to: email,
-			subject: 'Verification Code',
+			subject: "Verification Code",
 			text: `Your verification code is: ${verificationCode}`,
 		}
 		try {
 			await this.transporter.sendMail(mailOptions)
 			return true
 		} catch (error) {
-			console.error('error', error)
+			console.error("error", error)
 			return false
 		}
 	}

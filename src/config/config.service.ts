@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common'
-import * as dotenv from 'dotenv'
-import * as Joi from 'joi'
-import ConfigInterface from './types/Config.type'
+import { Injectable } from "@nestjs/common"
+import * as dotenv from "dotenv"
+import * as Joi from "joi"
+import ConfigInterface from "./types/Config.type"
 @Injectable()
 export class ConfigService {
 	private readonly config: ConfigInterface
