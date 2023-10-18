@@ -1,15 +1,15 @@
-import { Exclude, Transform } from 'class-transformer';
+import { Exclude, Transform } from 'class-transformer'
 
 export class UserResponseDto {
-  @Exclude()
-  password: string;
+	@Exclude()
+	password: string
 
-  @Transform((value) => {
-    return value.value.toString();
-  })
-  _id: string | unknown;
+	@Transform(value => {
+		return value.value.toString()
+	})
+	_id: string | unknown
 
-  constructor(partial: Partial<UserResponseDto>) {
-    Object.assign(this, partial);
-  }
+	constructor(partial: Partial<UserResponseDto>) {
+		Object.assign(this, partial)
+	}
 }

@@ -1,19 +1,19 @@
 import { Schema, SchemaFactory, Prop } from '@nestjs/mongoose'
 import { Document } from 'mongoose'
 
-@Schema({ timestamps: true })
+@Schema({ timestamps: true, versionKey: false })
 export class User {
-	@Prop()
-	firstName: string
-
-	@Prop()
-	lastName: string
-
 	@Prop()
 	email: string
 
 	@Prop()
 	password: string
+
+	@Prop()
+	isVerified: boolean
+
+	@Prop()
+	verificationCode?: string
 }
 
 export type UserDocument = User & Document

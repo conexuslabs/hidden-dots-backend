@@ -12,7 +12,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 import { UserResponseDto } from 'src/users/dto/user-response.dto'
 import { AuthService } from './auth.service'
 import { LoginDto } from './dto/login.dto'
-import { SignupDto } from './dto/signup.dto'
+import { SignupViaEmailDto, VerifyEmailDto } from './dto/signup.dto'
 import { JwtAuthGuard } from './jwt-auth.guard'
 import { LocalAuthGuard } from './local-auth.guard'
 
@@ -20,12 +20,6 @@ import { LocalAuthGuard } from './local-auth.guard'
 @Controller('auth')
 export class AuthController {
 	constructor(private readonly authService: AuthService) {}
-
-	@UseGuards(LocalAuthGuard)
-	@Post('login')
-	async login(@Request() req: any, @Body() _body: LoginDto) {
-		return this.authService.login(req.user)
-	}
 
 	@UseGuards(JwtAuthGuard)
 	@ApiBearerAuth()
@@ -35,10 +29,19 @@ export class AuthController {
 		return new UserResponseDto(req.user)
 	}
 
-	@UseInterceptors(ClassSerializerInterceptor)
-	@Post('signup')
-	async signup(@Body() body: SignupDto) {
-		const user = await this.authService.signup(body)
-		return new UserResponseDto(user)
+	@Post('signup-via-email')
+	async signup(@Body() body: SignupViaEmailDto) {
+		return await this.authService.signup(body)
+	}
+
+	@Post('verify-email')
+	async verifyEmail(@Body() body: VerifyEmailDto) {
+		return await this.authService.verifyEmail(body)
+	}
+
+	@UseGuards(LocalAuthGuard)
+	@Post('login')
+	async login(@Request() req: any, @Body() _body: LoginDto) {
+		return this.authService.login(req.user)
 	}
 }

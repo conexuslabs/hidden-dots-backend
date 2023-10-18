@@ -1,50 +1,66 @@
+import { Model } from 'mongoose'
+import * as bcrypt from 'bcrypt'
+import * as nodemailer from 'nodemailer'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { UsersService } from 'src/users/users.service'
-import { SignupDto } from './dto/signup.dto'
-import * as bcrypt from 'bcrypt'
-import { UserDocument } from 'src/schemas/user.schema'
+import { SignupViaEmailDto, VerifyEmailDto } from './dto/signup.dto'
+import { User, UserDocument } from 'src/schemas/user.schema'
 import { JwtService } from '@nestjs/jwt'
-// const nodemailer = require('nodemailer')
-// const sgMail = require('@sendgrid/mail')
-// import { EmailService } from "../emailer/emailer"
+import { AUTH_ERRORS } from './errors'
+import { ConfigService } from 'src/config/config.service'
+import { InjectModel } from '@nestjs/mongoose'
+import { SUCCESS_MESSAGES } from 'src/common/successMessages'
 
 @Injectable()
 export class AuthService {
-	constructor(private readonly usersService: UsersService, private readonly jwtService: JwtService) {}
+	private transporter
 	private static HASH_ROUNDS = 10
+	private generateVerificationCode() {
+		const min = 100000 // Minimum 6-digit number
+		const max = 999999 // Maximum 6-digit number
+		const verificationCode = Math.floor(Math.random() * (max - min + 1)) + min
+		return verificationCode.toString()
+	}
 
-	async signup(user: SignupDto) {
-		const existingUser = await this.usersService.findOne({ email: user.email })
-		if (existingUser) throw new BadRequestException('User with email already exists')
+	constructor(
+		private readonly usersService: UsersService,
+		private readonly jwtService: JwtService,
+		private readonly configService: ConfigService,
+		@InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+	) {
+		this.transporter = nodemailer.createTransport({
+			host: 'smtp.titan.email',
+			port: 465,
+			secure: true,
+			auth: {
+				user: this.configService.serverEmail,
+				pass: this.configService.serverPassword,
+			},
+		})
+	}
 
-		const password = ''
+	async signup(credentials: SignupViaEmailDto) {
+		const { email, password } = credentials
+		const existingUser = await this.usersService.findOne({ email })
+		if (existingUser) throw new BadRequestException(AUTH_ERRORS.USER_EMAIL_ALREADY_EXIST)
 
 		const hashedPassword = await bcrypt.hash(password, AuthService.HASH_ROUNDS)
-		const createdUser = await this.usersService.create({
-			...user,
+		const verificationCode = this.generateVerificationCode()
+
+		await this.usersService.create({
+			email,
 			password: hashedPassword,
+			isVerified: false,
+			verificationCode,
 		})
 
-		// const transporter = nodemailer.createTransport({
-		// 	service: 'gmail',
-		// 	auth: {
-		// 		user: 'hacker.sanan4@gmail.com',
-		// 		pass: 'nkixauhximetftdy',
-		// 	},
-		// })
+		const codeSentSuccessfully = await this.sendVerificationCode(email, verificationCode)
 
-		// const mailOptions = {
-		// 	from: 'hacker.sanan4@gmail.com',
-		// 	to: user.email,
-		// 	subject: 'Signup Successful!',
-		// 	text: `Here is your password. ${password}`,
-		// }
-		// transporter.sendMail(mailOptions, (error: any, info: any) => {
-		// 	if (error) console.log('Error occurred:', error)
-		// 	else console.log('Email sent:', info.response)
-		// })
-
-		return createdUser
+		if (codeSentSuccessfully) {
+			return {
+				successMessage: SUCCESS_MESSAGES.VERIFICATION_CODE_SENT_SUCCESSFULLY,
+			}
+		} else throw new BadRequestException(AUTH_ERRORS.FAILED_TO_SEND_EMAIL)
 	}
 
 	async validateUser({ email, password }: { email: string; password: string }) {
@@ -57,10 +73,41 @@ export class AuthService {
 		return rest
 	}
 
-	async login(user: UserDocument) {
+	async login(user: Partial<UserDocument>) {
 		const payload = { username: user.email, sub: user._id }
 		return {
 			token: this.jwtService.sign(payload),
+			successMessage: SUCCESS_MESSAGES.LOGGED_IN_SUCCESS,
+		}
+	}
+
+	async sendVerificationCode(email: string, verificationCode: string) {
+		const mailOptions = {
+			from: this.configService.serverEmail,
+			to: email,
+			subject: 'Verification Code',
+			text: `Your verification code is: ${verificationCode}`,
+		}
+		try {
+			await this.transporter.sendMail(mailOptions)
+			return true
+		} catch (error) {
+			console.error('error', error)
+			return false
+		}
+	}
+
+	async verifyEmail(params: VerifyEmailDto) {
+		const { code, email } = params
+		const unVerifiedUserFoundAndUpdated = await this.userModel.findOneAndUpdate(
+			{ email, verificationCode: code },
+			{ $set: { isVerified: true }, $unset: { verificationCode: 1 } },
+			{ new: true },
+		)
+
+		if (!unVerifiedUserFoundAndUpdated) throw new BadRequestException(AUTH_ERRORS.EMAIL_OR_CODE_IS_WRONG)
+		else {
+			return this.login(unVerifiedUserFoundAndUpdated)
 		}
 	}
 }
