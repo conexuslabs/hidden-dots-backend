@@ -17,7 +17,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard'
 @Controller('workSpace')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-export class WrokSpaceController {
+export class WorkSpaceController {
     constructor(private readonly workSpaceService: WorkSpaceService) { }
 
     @Post("details")
