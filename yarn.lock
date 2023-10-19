@@ -1843,7 +1843,7 @@ class-transformer@*, "class-transformer@^0.2.0 || ^0.3.0 || ^0.4.0 || ^0.5.0", c
   resolved "https://registry.npmjs.org/class-transformer/-/class-transformer-0.5.1.tgz"
   integrity sha512-SQa1Ws6hUbfC98vKGxZH3KFY0Y1lm5Zm0SY8XX9zbK7FJCyVEac3ATW0RIpwzW+oOfmHE5PMPufDG9hCfoEOMw==
 
-class-validator@*, "class-validator@^0.11.1 || ^0.12.0 || ^0.13.0", class-validator@0.13.*:
+class-validator@*, "class-validator@^0.11.1 || ^0.12.0 || ^0.13.0", class-validator@^0.13.2, class-validator@0.13.*:
   version "0.13.2"
   resolved "https://registry.npmjs.org/class-validator/-/class-validator-0.13.2.tgz"
   integrity sha512-yBUcQy07FPlGzUjoLuUfIOXzgynnQPPruyK1Ge2B74k9ROwnle1E+NxLWnUv5OLU8hA/qL5leAE9XnXq3byaBw==
@@ -3571,9 +3571,9 @@ levn@^0.4.1:
     type-check "~0.4.0"
 
 libphonenumber-js@^1.9.43:
-  version "1.10.10"
-  resolved "https://registry.npmjs.org/libphonenumber-js/-/libphonenumber-js-1.10.10.tgz"
-  integrity sha512-JzYUapWcHkUe5n6OFqxJtHfCfuU0juqkqc9P+hrfzgmJODaREYLUgceiNAmIGx5j3Gjp7KVxi3koFo7OJFSTxg==
+  version "1.10.48"
+  resolved "https://registry.npmjs.org/libphonenumber-js/-/libphonenumber-js-1.10.48.tgz"
+  integrity sha512-Vvcgt4+o8+puIBJZLdMshPYx9nRN3/kTT7HPtOyfYrSQuN9PGBF1KUv0g07fjNzt4E4GuA7FnsLb+WeAMzyRQg==
 
 lines-and-columns@^1.1.6:
   version "1.2.4"

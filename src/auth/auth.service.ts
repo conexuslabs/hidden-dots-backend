@@ -1,7 +1,7 @@
 import { Model } from "mongoose"
 import * as bcrypt from "bcrypt"
 import * as nodemailer from "nodemailer"
-import { BadRequestException, Injectable } from "@nestjs/common"
+import { BadRequestException, forwardRef, Inject, Injectable } from "@nestjs/common"
 import { UsersService } from "src/users/users.service"
 import { SignupViaEmailDto, VerifyEmailDto } from "./dto/signup.dto"
 import { User, UserDocument } from "src/schemas/user.schema"
@@ -10,20 +10,15 @@ import { AUTH_ERRORS } from "./errors"
 import { ConfigService } from "src/config/config.service"
 import { InjectModel } from "@nestjs/mongoose"
 import { SUCCESS_MESSAGES } from "src/common/successMessages"
+import { generateVerificationCode } from "src/common/utils"
 
 @Injectable()
 export class AuthService {
 	private transporter
 	private static HASH_ROUNDS = 10
-	private generateVerificationCode() {
-		const min = 100000 // Minimum 6-digit number
-		const max = 999999 // Maximum 6-digit number
-		const verificationCode = Math.floor(Math.random() * (max - min + 1)) + min
-		return verificationCode.toString()
-	}
 
 	constructor(
-		private readonly usersService: UsersService,
+		@Inject(forwardRef(() => UsersService)) private readonly usersService: UsersService,
 		private readonly jwtService: JwtService,
 		private readonly configService: ConfigService,
 		@InjectModel(User.name) private readonly userModel: Model<UserDocument>,
@@ -45,7 +40,7 @@ export class AuthService {
 		if (existingUser) throw new BadRequestException(AUTH_ERRORS.USER_EMAIL_ALREADY_EXIST)
 
 		const hashedPassword = await bcrypt.hash(password, AuthService.HASH_ROUNDS)
-		const verificationCode = this.generateVerificationCode()
+		const verificationCode = generateVerificationCode()
 
 		await this.usersService.create({
 			email,
@@ -68,6 +63,7 @@ export class AuthService {
 		if (!user) return null
 		const { password: hashedPassword, ...rest } = user
 		const match = await bcrypt.compare(password, hashedPassword)
+		if (!rest.isVerified) return null
 		if (!match) return null
 
 		return rest
@@ -102,7 +98,7 @@ export class AuthService {
 		const unVerifiedUserFoundAndUpdated = await this.userModel.findOneAndUpdate(
 			{ email, verificationCode: code },
 			{ $set: { isVerified: true }, $unset: { verificationCode: 1 } },
-			{ new: true },
+			{ new: true, lean: true },
 		)
 
 		if (!unVerifiedUserFoundAndUpdated) throw new BadRequestException(AUTH_ERRORS.EMAIL_OR_CODE_IS_WRONG)
